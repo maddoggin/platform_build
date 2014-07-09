@@ -35,6 +35,8 @@ PRODUCT_PACKAGES := \
     TeleService \
     CalendarProvider \
     bluetooth-health \
+    hostapd \
+    wpa_supplicant.conf \
     WallpaperCropper
 
 PRODUCT_PACKAGES += \
@@ -46,7 +48,7 @@ PRODUCT_PACKAGES += \
     pand \
     pppd \
     sdptool \
-    busybox
+    wpa_supplicant
 
 #PRODUCT_PACKAGES += \
     librs_jni \
