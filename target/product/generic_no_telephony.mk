@@ -20,9 +20,9 @@
 PRODUCT_PACKAGES := \
     Bluetooth \
     Camera2 \
-    Gallery2 \
-    Music \
-    MusicFX \
+    InputDevices \
+    Keyguard \
+    LatinIME \
     OneTimeInitializer \
     Provision \
     SystemUI \
@@ -34,7 +34,7 @@ PRODUCT_PACKAGES += \
     pppd \
     screenrecord
 
-PRODUCT_PACKAGES += \
+#PRODUCT_PACKAGES += \
     librs_jni \
     libvideoeditor_jni \
     libvideoeditor_core \
