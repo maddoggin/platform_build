@@ -34,7 +34,6 @@ PRODUCT_PACKAGES += \
     InputDevices \
     KeyChain \
     Keyguard \
-    LatinIME \
     ManagedProvisioning \
     PacProcessor \
     libpac \

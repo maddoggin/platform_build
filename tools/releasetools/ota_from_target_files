@@ -127,7 +127,7 @@ OPTIONS.aslr_mode = True
 OPTIONS.worker_threads = multiprocessing.cpu_count() // 2
 if OPTIONS.worker_threads == 0:
   OPTIONS.worker_threads = 1
-OPTIONS.backuptool = False
+OPTIONS.backuptool = True
 OPTIONS.two_step = False
 OPTIONS.no_signing = False
 OPTIONS.block_based = False
@@ -534,7 +534,6 @@ def WriteFullOTAPackage(input_zip, output_zip):
 
 
   if OPTIONS.recovery:
-
     recovery_img = common.GetBootableImage("recovery.img", "recovery.img",
                                         OPTIONS.input_tmp, "RECOVERY")
     if OPTIONS.two_step:
@@ -558,16 +557,11 @@ def WriteFullOTAPackage(input_zip, output_zip):
   device_specific.FullOTA_InstallBegin()
 
   if OPTIONS.backuptool:
-    script.Mount("/system", OPTIONS.mount_by_label)
+    script.Mount("/system")
     script.RunBackup("backup")
-    if not OPTIONS.mount_by_label:
-      script.Unmount("/system")
+    script.Unmount("/system")
 
   script.ShowProgress(0.5, 0)
-
-  if OPTIONS.wipe_user_data:
-    script.Print("Formatting /data")
-    script.FormatPartition("/data", OPTIONS.mount_by_label)
 
   system_progress = 0.75
 
@@ -593,17 +587,19 @@ def WriteFullOTAPackage(input_zip, output_zip):
     system_diff = common.BlockDifference("system", system_tgt, src=None)
     system_diff.WriteScript(script, output_zip)
   else:
-    script.Print("Formatting /system")
+    script.Print("Formatting /system...")
     script.FormatPartition("/system")
     script.Mount("/system", recovery_mount_options)
-    if OPTIONS.recovery and not has_recovery_patch:
+
+  if OPTIONS.recovery:
+    if not has_recovery_patch:
       script.UnpackPackageDir("recovery", "/system")
 
-    script.Print("Extracting /system")
+    script.Print("Extracting /system...")
     script.UnpackPackageDir("system", "/system")
 
     symlinks = CopyPartitionFiles(system_items, input_zip, output_zip)
-    script.Print("Symlinking")
+    script.Print("Symlinking...")
     script.MakeSymlinks(symlinks)
 
   boot_img = common.GetBootableImage("boot.img", "boot.img",
@@ -614,8 +610,8 @@ def WriteFullOTAPackage(input_zip, output_zip):
       common.ZipWriteStr(output_zip, "recovery/" + fn, data)
       system_items.Get("system/" + fn, dir=False)
 
-    if OPTIONS.recovery:
-      common.MakeRecoveryPatch(OPTIONS.input_tmp, output_sink,
+  if OPTIONS.recovery:
+    common.MakeRecoveryPatch(OPTIONS.input_tmp, output_sink,
                              recovery_img, boot_img)
 
     system_items.GetMetadata(input_zip)
@@ -649,11 +645,11 @@ def WriteFullOTAPackage(input_zip, output_zip):
     script.RunBackup("restore")
 
   script.ShowProgress(0.2, 10)
-  script.Print("Flashing boot.img")
+  script.Print("Flashing boot.img...")
   script.WriteRawImage("/boot", "boot.img")
 
   script.ShowProgress(0.1, 0)
-  script.Print("Enjoy ROM!");
+  script.Print("Enjoy ROM!")
   device_specific.FullOTA_InstallEnd()
 
   if OPTIONS.extra_script is not None:
@@ -1253,10 +1249,6 @@ else
     script.WriteRawImage("/boot", "boot.img")
     print "writing full boot image (forced by two-step mode)"
 
-  if OPTIONS.wipe_user_data:
-    script.Print("Erasing user data...")
-    script.FormatPartition("/data", OPTIONS.mount_by_label)
-
   script.Print("Removing unneeded files...")
   system_diff.RemoveUnneededFiles(script, ("/system/recovery.img",))
   if vendor_diff:
@@ -1359,9 +1351,10 @@ else
     script.Print("Unpacking new vendor files...")
     script.UnpackPackageDir("vendor", "/vendor")
 
-  if updating_recovery and not target_has_recovery_patch:
-    script.Print("Unpacking new recovery...")
-    script.UnpackPackageDir("recovery", "/system")
+  if OPTIONS.recovery:
+    if updating_recovery and not target_has_recovery_patch:
+      script.Print("Unpacking new recovery...")
+      script.UnpackPackageDir("recovery", "/system")
 
   system_diff.EmitRenames(script)
   if vendor_diff:

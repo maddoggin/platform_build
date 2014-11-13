@@ -16,7 +16,6 @@ Invoke ". build/envsetup.sh" from your shell to add the following functions to y
 - resgrep: Greps on all local res/*.xml files.
 - sgrep:   Greps on all local source files.
 - godir:   Go to the directory containing a file.
-- pushboot:Push a file from your OUT dir to your phone and reboots it, using absolute path.
 
 Look at the source to view more functions. The complete list is:
 EOF
@@ -61,6 +60,15 @@ function check_product()
         echo "Couldn't locate the top of the tree.  Try setting TOP." >&2
         return
     fi
+
+    if (echo -n $1 | grep -q -e "^tsm_") ; then
+       CUSTOM_BUILD=$(echo -n $1 | sed -e 's/^tsm_//g')
+    else
+       CUSTOM_BUILD=
+    fi
+    export CUSTOM_BUILD
+
+    CALLED_FROM_SETUP=true BUILD_SYSTEM=build/core \
         TARGET_PRODUCT=$1 \
         TARGET_BUILD_VARIANT= \
         TARGET_BUILD_TYPE= \
@@ -486,10 +494,11 @@ function brunch()
 function breakfast()
 {
     target=$1
+    local variant=$2
     CUSTOM_DEVICES_ONLY="true"
     unset LUNCH_MENU_CHOICES
     add_lunch_combo full-eng
-    for f in `/bin/ls vendor/custom/vendorsetup.sh 2> /dev/null`
+    for f in `/bin/ls vendor/tsm/vendorsetup.sh 2> /dev/null`
         do
             echo "including $f"
             . $f
@@ -505,8 +514,11 @@ function breakfast()
             # A buildtype was specified, assume a full device name
             lunch $target
         else
-            # This is probably just the custom model name
-            lunch custom_$target-user
+            # This is probably just the tsm model name
+            if [ -z "$variant" ]; then
+                variant="user"
+            fi
+            lunch tsm_$target-$variant
         fi
     fi
     return $?
@@ -643,21 +655,6 @@ function tapas()
 
     set_stuff_for_environment
     printconfig
-}
-
-function pushboot() {
-    if [ ! -f $OUT/$* ]; then
-        echo "File not found: $OUT/$*"
-        return 1
-    fi
-
-    adb root
-    sleep 1
-    adb wait-for-device
-    adb remount
-
-    adb push $OUT/$* /$*
-    adb reboot
 }
 
 function gettop

@@ -19,10 +19,7 @@
 
 PRODUCT_PACKAGES := \
     Bluetooth \
-    Camera2 \
-    InputDevices \
-    Keyguard \
-    LatinIME \
+    MusicFX \
     OneTimeInitializer \
     Provision \
     SystemUI \
